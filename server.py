@@ -7,6 +7,7 @@
 # pylint: disable=logging-format-interpolation, consider-using-f-string, logging-fstring-interpolation
 
 import os
+import sys
 import logging
 import time
 import uuid
@@ -24,8 +25,12 @@ here = os.path.dirname(os.path.abspath(__file__))
 STORAGE_PATH = os.path.join(here, 'data')
 sqlalchemy_database_uri = f'sqlite:///{STORAGE_PATH}/catalog.01.db'
 
-# ~ LOG_LEVEL = "DEBUG"
-LOG_LEVEL = "INFO"
+LOG_LEVEL = "WARNING"
+if sys.argv[1:]:
+    LOG_LEVEL = sys.argv[1]
+
+HOST = 'localhost'
+PORT = 5000
 
 CSV_ENCODING = 'utf-8-sig'
 CSV_DELIMITER = ','
@@ -159,7 +164,6 @@ class SocketioServer:
         os.remove(f_pth)
 
 def set_logging(log_level):
-
     fmt_ = logging.Formatter('[%(asctime)s]'
                              # ~ '%(name)s:'
                              '%(levelname)s:'
@@ -175,7 +179,7 @@ def set_logging(log_level):
     logger_.addHandler(ch)
     logger_.setLevel(log_level)
 
-
+    logging.warning(f"log_level:{log_level}")
 
 @app.route('/')
 def index():
@@ -200,10 +204,9 @@ def main():
     admin = Admin(app, index_view=AdminIndexView())
     admin.add_view(CatalogView(Catalog, db.session))
 
-    admin.add_link(MenuLink(name='file tranfer page', url='/'))
+    admin.add_link(MenuLink(name='file transfer page', url='/'))
 
-    socketio.run(app)
-
+    socketio.run(app, port=PORT, host=HOST, debug=(LOG_LEVEL=='DEBUG'))
 
 if __name__ == '__main__':
     main()
