@@ -21,8 +21,9 @@ use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) o
 * Server-Side Validation on each uploaded chunk to ensure its integrity (e.g., SHA256).
 * Rate Limiting to prevent abuse and protect.
 
-#### Usability
+#### Usability/availability
  
+* change the db backend for a real multi-user deploy, e.g from file-based sqlite to a pg server
 * add a policy of table pagination/rotation to avoid the db table to grow to fill up the disk
 * design a user friendly HTML interface 
 * zip data on client and unzip on server
