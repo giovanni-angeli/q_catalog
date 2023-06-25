@@ -38,6 +38,8 @@ CSV_QUOTECHAR = '"'
 
 CHUNK_SIZE_BYTES = 1024
 
+os.makedirs(STORAGE_PATH, exist_ok=True)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_database_uri
