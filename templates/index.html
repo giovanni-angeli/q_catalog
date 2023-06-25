@@ -36,13 +36,51 @@
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
 	<script>
+		const socket = io();
+		var comm_watchdog_timeout;
+		var comm_watchdog_timeout_delay = 5*1000;    // millisec
 
-		const socket = io(); // WebSocket connection
-
-		var msg;
-		function set_progress(p, message) 
+		function alert_ui_stalled_comm() 
 		{
 			const progress_bar = document.getElementById('progress_bar');
+			let msg_ = "Communication with the server appears to be stalled.<br/> Reload the page to reset or wait...";
+			progress_bar.innerHTML = msg_;
+			document.getElementById('progress_bar_container').style.backgroundColor = "#FF6666";
+		}
+
+		function re_activate_comm_watchdog_timeout(flag) 
+		{
+			try 
+			{
+				if (comm_watchdog_timeout)
+				{
+					clearTimeout(comm_watchdog_timeout); 
+				}
+			} 
+			catch (err) 
+			{
+				console.log(err);
+			}
+
+			if (flag) 
+			{
+				comm_watchdog_timeout = setTimeout(
+					function()
+					{
+						alert_ui_stalled_comm()
+					}, 
+					comm_watchdog_timeout_delay
+				);
+			}
+		}
+
+		function show_progress(p, message) 
+		{
+			var msg;
+			const progress_bar = document.getElementById('progress_bar');
+
+			re_activate_comm_watchdog_timeout(true);
+
 			if (p == 0) 
 			{ 
 				document.getElementById('upload_button').disabled = true;
@@ -60,11 +98,12 @@
 				document.getElementById('progress_bar_container').style.backgroundColor = "#FFFF66";
 				msg = 'on xfer, wait ... ';
 			}
-			progress_bar.innerHTML = msg + Math.round(p) + '%; <br/>' + message;
+			msg = msg + Math.round(p) + '%; <br/>' + message
+			progress_bar.innerHTML = msg;
 			progress_bar.style.width = p + '%';
+			console.log(msg);
 		}
 
-		// Upload file on button click
 		async function upload_file() 
 		{
 			const file_input = document.getElementById('file_input');
@@ -88,7 +127,7 @@
 								{
 									console.log(data.message);
 									const progr = (offset / file.size) * 100;
-									set_progress(progr, data.message);
+									show_progress(progr, data.message);
 									resolve();
 								}
 							);
@@ -104,12 +143,10 @@
 
 			async function read_send_file() 
 			{
-
 				socket.emit('start_file_upload', file.size, file.name);
 				socket.once('start_file_upload_ack', function(data) 
 					{
-						set_progress(0, data.message);
-						console.log('File upload started.');
+						show_progress(0, data.message);
 					}
 				);
 
@@ -123,25 +160,24 @@
 				socket.emit('file_uploaded', file.size, file.name);
 				socket.once('file_uploaded_ack', function(data) 
 					{
-						set_progress(100, data.message);
-						console.log('File uploaded successfully.');
+						show_progress(100, data.message);
 					}
 				);
 				socket.once('file_stored_ack', function(data) 
 					{
-						set_progress(100, data.message);
-						console.log('File stored.');
+						show_progress(100, data.message);
+						re_activate_comm_watchdog_timeout(false);
 					}
 				);
 			}
 
 			socket.on('record_loaded_ack', function(data) 
 				{
-					set_progress(100, data.message);
-					console.log('records loadeed.');
+					show_progress(100, data.message);
 				}
 			);
 
+			re_activate_comm_watchdog_timeout(true);
 			read_send_file(file);
 		}
 	</script>
