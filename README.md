@@ -23,6 +23,7 @@ use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) o
 
 #### Usability/availability
  
+* periodic cleaning of temporary files eventually left over.
 * change the db backend for a real multi-user deploy, e.g from file-based sqlite to a pg server
 * add a policy of table pagination/rotation to avoid the db table to grow undefinitely
 * design a user friendly HTML interface 
@@ -32,8 +33,14 @@ use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) o
 
 * add a test suite based on a client impelemented in python
 
+### Possible Optimizations:
+
+* store records in the db in 'bulk' not record-by-record.
+* build chunks on client by rows and store them in db on server on the fly i.e. without saving file on disk.
+* recover of interrupted sessions.
+
 ### Possible Variations:
 
-* allow the users to upload the csv files in batch mode, e.g. email-ing or ftp-ing them and receiveing a confirmation email report 
+* allow the users to upload the csv files in batch mode, e.g. email-ing or ftp-ing them and receiveing a confirmation email report off-line.
 * use websockets python module instead of socketio
 
