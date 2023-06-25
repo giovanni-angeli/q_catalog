@@ -6,12 +6,13 @@ this is not packed up as a python wheel, so:
 * clone the repo, 
 * install the requirements (in a virtualenv) **pip install flask_sqlalchemy flask_socketio flask_admin**,
 * run **python server.py**, 
-* open the browser at **http:<localhost>:5000**
+* open the browser at **http:*localhost*:5000**
 
 this is just a P.O.C so there are many
 ### Possible Improvements:
 
 use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) or [uvicorn](https://www.uvicorn.org/)
+(see this as an example: [merp](https://github.com/giovanni-angeli/merp))
 
 #### Security
 
@@ -32,6 +33,6 @@ use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) o
 
 ### Possible Variations:
 
-* allow the users to upload the csv files in batch mode e.g. emailing them
+* allow the users to upload the csv files in batch mode, e.g. email-ing or ftp-ing them and receiveing a confirmation email report 
 * use websockets python module instead of socketio
 
