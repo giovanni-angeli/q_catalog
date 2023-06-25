@@ -8,12 +8,14 @@ this is not packed up as a python wheel, so:
 * run **python server.py**, 
 * open the browser at **http:<localhost>:5000**
 
-
+this is just a P.O.C so ther are many
 ### Possible Improvements:
+
+use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) or [uvicorn](https://www.uvicorn.org/)
 
 #### Security
 
-* Use a production http server, and use HTTPS in the communication.
+* Use HTTPS in the communication.
 * Authentication and Authorization: only authorized users can upload or download files.
 * Server-Side Validation on each uploaded chunk to ensure its integrity (e.g., SHA256).
 * Rate Limiting to prevent abuse and protect.
@@ -29,6 +31,6 @@ this is not packed up as a python wheel, so:
 
 ### Possible Variations:
 
-* use websockets python module and a ASGI server (e.g. uvicorn) to serve in asyncio
 * allow the users to upload the csv files in batch mode e.g. emailing them
+* use websockets python module instead of socketio
 
