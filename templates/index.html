@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>File Transfer</title>
+
+	<style>
+		#progress_bar_container {
+			width: 600px;
+			height: 30px;
+			background-color: #999999;
+			margin-top: 10px;
+			text-align: center;
+
+			border: 1px solid green;
+			padding: 10px;
+
+		}
+	</style>
+
+</head>
+<body>
+
+	<h1>File Transfer</h1>
+	<table>
+		<tr><td>csv encoding: </td><td>{{csv_encoding}}</td></tr>
+		<tr><td>csv delimiter:</td><td>{{csv_delimiter}}      </td></tr>
+		<tr><td>csv quotechar:</td><td>{{csv_quotechar}}      </td></tr>
+		<tr><td>chunk size in bytes:</td><td>{{chunk_size_bytes}}      </td></tr>
+	</table>
+	<input type="file" id="file_input" name="file_input" />
+	<button type="button" onclick="upload_file();" id="upload_button">Upload</button>
+
+	<div id="progress_bar_container"><span id="progress_bar"></span></div>
+
+	<a href="/admin/catalog">see catalog</a>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+	<script>
+
+		const socket = io(); // WebSocket connection
+
+		var msg;
+		function set_progress(p, message) 
+		{
+			const progress_bar = document.getElementById('progress_bar');
+			if (p == 0) 
+			{ 
+				document.getElementById('upload_button').disabled = true;
+				document.getElementById('progress_bar_container').style.backgroundColor = "#666666";
+				msg = 'xfer started. ';
+			} 
+			else if (p == 100) 
+			{
+				document.getElementById('upload_button').disabled = false;
+				document.getElementById('progress_bar_container').style.backgroundColor = "#66FF66";
+				msg = 'xfer ended. ';
+			}
+			else
+			{
+				document.getElementById('progress_bar_container').style.backgroundColor = "#FFFF66";
+				msg = 'on xfer, wait ... ';
+			}
+			progress_bar.innerHTML = msg + Math.round(p) + '%; <br/>' + message;
+			progress_bar.style.width = p + '%';
+		}
+
+		// Upload file on button click
+		async function upload_file() 
+		{
+			const file_input = document.getElementById('file_input');
+			const file = file_input.files[0];
+			const chunk_size_bytes = {{ chunk_size_bytes }};
+			let offset = 0;
+
+			const reader = new FileReader();
+
+			// Read and send a file chunk async.
+			function read_send_chunk(chunk)
+			{
+				return new Promise(
+					(resolve, reject) => {
+						reader.onload = function(e) 
+						{
+							socket.emit('upload_chunk', e.target.result, file.name);
+
+							// Wait for acknowledgment from server before resolving
+							socket.once('chunk_ack', function(data) 
+								{
+									console.log(data.message);
+									const progr = (offset / file.size) * 100;
+									set_progress(progr, data.message);
+									resolve();
+								}
+							);
+						};
+						reader.onerror = function(e) 
+						{
+							reject(e.target.error);
+						};
+						reader.readAsArrayBuffer(chunk);
+					}
+				);
+			}
+
+			async function read_send_file() 
+			{
+
+				socket.emit('start_file_upload', file.size, file.name);
+				socket.once('start_file_upload_ack', function(data) 
+					{
+						set_progress(0, data.message);
+						console.log('File upload started.');
+					}
+				);
+
+				while (offset < file.size) 
+				{
+					const chunk = file.slice(offset, offset + chunk_size_bytes);
+					await read_send_chunk(chunk);
+					offset += chunk_size_bytes;
+				}
+
+				socket.emit('file_uploaded', file.size, file.name);
+				socket.once('file_uploaded_ack', function(data) 
+					{
+						set_progress(100, data.message);
+						console.log('File uploaded successfully.');
+					}
+				);
+				socket.once('file_stored_ack', function(data) 
+					{
+						set_progress(100, data.message);
+						console.log('File stored.');
+					}
+				);
+			}
+
+			socket.on('record_loaded_ack', function(data) 
+				{
+					set_progress(100, data.message);
+					console.log('records loadeed.');
+				}
+			);
+
+			read_send_file(file);
+		}
+	</script>
+</body>
+</html>

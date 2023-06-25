@@ -1,0 +1,13 @@
+*.pyc
+*.egg-info
+*__pycache__*
+
+*.session
+
+*.diff
+*.show
+
+__tmp__*
+data/
+venv/
+
