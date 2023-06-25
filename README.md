@@ -8,7 +8,7 @@ this is not packed up as a python wheel, so:
 * run **python server.py**, 
 * open the browser at **http:<localhost>:5000**
 
-this is just a P.O.C so ther are many
+this is just a P.O.C so there are many
 ### Possible Improvements:
 
 use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) or [uvicorn](https://www.uvicorn.org/)
@@ -22,6 +22,7 @@ use an ASGI http server, e.g. [hypercorn](https://pypi.org/project/hypercorn/) o
 
 #### Usability
  
+* add a policy of table pagination/rotation to avoid the db table to grow to fill up the disk
 * design a user friendly HTML interface 
 * zip data on client and unzip on server
 
