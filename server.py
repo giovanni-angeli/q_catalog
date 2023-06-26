@@ -80,19 +80,19 @@ def dump_from_csv_file_to_db(f_pth, sessid):  # pylint: disable=too-many-locals
                         db.session.commit() # pylint: disable=no-member
                         new_cntr += 1
 
-                    msg_ = f"{new_cntr} new and {mod_cntr} modified records..."
-
-                    logging.debug(msg_)
-
-                    if row_cntr%10 == 0:
-                        socketio.emit('record_loaded_ack', {'message': msg_}, to=sessid)
-
                 except Exception as e:
                     err_cntr += 1
                     db.session.rollback()  # pylint: disable=no-member
                     logging.error(f"{e}")
 
                 row_cntr += 1
+
+                if row_cntr%10 == 0:
+                    msg_ = f"{new_cntr} new and {mod_cntr} modified records, {err_cntr} errors..."
+                    socketio.emit('record_loaded_ack', {'message': msg_}, to=sessid)
+                    logging.debug(msg_)
+
+
 
     dt = time.time() - t0
     logging.info(f"f_pth:{f_pth}, {new_cntr} new and {mod_cntr} modified records, dt:{dt}")
@@ -120,7 +120,7 @@ class CatalogView(ModelView):
 
 
 class SocketioServer:
-    
+
     sessions = {}
 
     @staticmethod
