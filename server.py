@@ -52,7 +52,7 @@ def generate_id():
 
     return str(uuid.uuid4())
 
-def dump_from_csv_file_to_db(f_pth):  # pylint: disable=too-many-locals
+def dump_from_csv_file_to_db(f_pth, sessid):  # pylint: disable=too-many-locals
 
     t0 = time.time()
     new_cntr = 0
@@ -85,7 +85,7 @@ def dump_from_csv_file_to_db(f_pth):  # pylint: disable=too-many-locals
                     logging.debug(msg_)
 
                     if row_cntr%10 == 0:
-                        socketio.emit('record_loaded_ack', {'message': msg_})
+                        socketio.emit('record_loaded_ack', {'message': msg_}, to=sessid)
 
                 except Exception as e:
                     err_cntr += 1
@@ -98,7 +98,6 @@ def dump_from_csv_file_to_db(f_pth):  # pylint: disable=too-many-locals
     logging.info(f"f_pth:{f_pth}, {new_cntr} new and {mod_cntr} modified records, dt:{dt}")
 
     return new_cntr, mod_cntr, err_cntr
-
 
 class Catalog(db.Model):
 
@@ -121,6 +120,9 @@ class CatalogView(ModelView):
 
 
 class SocketioServer:
+    
+    sessions = {}
+
     @staticmethod
     @socketio.on('connect')
     def handle_connect():
@@ -139,7 +141,7 @@ class SocketioServer:
         logging.debug(f'file_size:{file_size }, sessid:{sessid}, file_id:{file_id}')
 
         with open(os.path.join(STORAGE_PATH, f"{sessid}.{file_id}"), 'w', encoding=CSV_ENCODING):
-            socketio.emit('start_file_upload_ack', {'message': 'Chunk acknowledged by the server'})
+            socketio.emit('start_file_upload_ack', {'message': 'Chunk acknowledged by the server'}, to=sessid)
 
     @staticmethod
     @socketio.on('upload_chunk')
@@ -149,7 +151,7 @@ class SocketioServer:
         logging.info(f'len(chunk):{len(chunk)}, sessid:{sessid}, file_id:{file_id}')
         with open(os.path.join(STORAGE_PATH, f"{sessid}.{file_id}"), 'a', encoding=CSV_ENCODING) as f:
             f.write(chunk.decode(CSV_ENCODING))
-            socketio.emit('chunk_ack', {'message': 'Chunk acknowledged by the server'})
+            socketio.emit('chunk_ack', {'message': 'Chunk acknowledged by the server'}, to=sessid)
 
     @staticmethod
     @socketio.on('file_uploaded')
@@ -160,14 +162,15 @@ class SocketioServer:
 
         f_pth = os.path.join(STORAGE_PATH, f"{sessid}.{file_id}")
 
-        socketio.emit('file_uploaded_ack', {'message': 'File received, loading records into db...'})
+        socketio.emit('file_uploaded_ack', {'message': 'File received, loading records into db...'}, to=sessid)
 
         try:
-            new_cntr, mod_cntr, err_cntr = dump_from_csv_file_to_db(f_pth)
-            socketio.emit('file_stored_ack', {'message': f'{new_cntr} new and {mod_cntr} modified records into db. {err_cntr} invalid rows.'})
+            new_cntr, mod_cntr, err_cntr = dump_from_csv_file_to_db(f_pth, sessid)
+            msg_ = f'{new_cntr} new and {mod_cntr} modified records into db. {err_cntr} invalid rows.'
+            socketio.emit('file_stored_ack', {'message': msg_}, to=sessid)
         except Exception as e:
             logging.error(traceback.format_exc())
-            socketio.emit('file_stored_ack', {'message': f'ERROR in storing data to db: {e}.'})
+            socketio.emit('file_stored_ack', {'message': f'ERROR in storing data to db: {e}.'}, to=sessid)
 
         os.remove(f_pth)
 
