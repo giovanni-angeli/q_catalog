@@ -24,7 +24,7 @@ from flask_admin.base import MenuLink # pylint: disable=import-error
 
 here = os.path.dirname(os.path.abspath(__file__))
 STORAGE_PATH = os.path.join(here, 'data')
-sqlalchemy_database_uri = f'sqlite:///{STORAGE_PATH}/catalog.01.db'
+sqlalchemy_database_uri = f'sqlite:///{STORAGE_PATH}/catalog.02.db'
 
 LOG_LEVEL = "WARNING"
 if sys.argv[1:]:
@@ -92,8 +92,6 @@ def dump_from_csv_file_to_db(f_pth, sessid):  # pylint: disable=too-many-locals
                     socketio.emit('record_loaded_ack', {'message': msg_}, to=sessid)
                     logging.debug(msg_)
 
-
-
     dt = time.time() - t0
     logging.info(f"f_pth:{f_pth}, {new_cntr} new and {mod_cntr} modified records, dt:{dt}")
 
@@ -105,7 +103,7 @@ class Catalog(db.Model):
 
     ID = db.Column(db.Unicode, primary_key=True, nullable=False, default=generate_id)
     Name = db.Column(db.Unicode, nullable=False)
-    Price = db.Column(db.Unicode, nullable=False)
+    Price = db.Column(db.Numeric, nullable=False)
 
 class CatalogView(ModelView):
 
