@@ -65,7 +65,7 @@ def dump_from_csv_file_to_db(f_pth):
                 try:
                     old_ID = row.pop('ID')
                     q = db.session.query(Catalog)  # pylint: disable=no-member
-                    old_c = q.filter_by(ID=row.get('ID')).first()
+                    old_c = q.filter_by(ID=old_ID).first()
                     if old_c:
                         for k, v in row.items():
                             setattr(old_c, k, v)
