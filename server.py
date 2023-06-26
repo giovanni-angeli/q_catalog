@@ -3,6 +3,7 @@
 # pylint: disable=missing-docstring
 # pylint: disable=line-too-long
 # pylint: disable=broad-except
+# pylint: disable=invalid-name
 # pylint: disable=too-few-public-methods
 # pylint: disable=logging-format-interpolation, consider-using-f-string, logging-fstring-interpolation
 
@@ -51,12 +52,13 @@ def generate_id():
 
     return str(uuid.uuid4())
 
-def dump_from_csv_file_to_db(f_pth):
+def dump_from_csv_file_to_db(f_pth):  # pylint: disable=too-many-locals
 
     t0 = time.time()
     new_cntr = 0
     mod_cntr = 0
     err_cntr = 0
+    row_cntr = 0
     with app.app_context():
         with open(f_pth, encoding=CSV_ENCODING) as f:
             csv_reader = csv.DictReader(f, delimiter=CSV_DELIMITER, quotechar=CSV_QUOTECHAR)
@@ -79,14 +81,18 @@ def dump_from_csv_file_to_db(f_pth):
                         new_cntr += 1
 
                     msg_ = f"{new_cntr} new and {mod_cntr} modified records..."
+
                     logging.debug(msg_)
-                    if new_cntr%10 == 0 and mod_cntr%10 == 0 :
+
+                    if row_cntr%10 == 0:
                         socketio.emit('record_loaded_ack', {'message': msg_})
 
                 except Exception as e:
                     err_cntr += 1
                     db.session.rollback()  # pylint: disable=no-member
                     logging.error(f"{e}")
+
+                row_cntr += 1
 
     dt = time.time() - t0
     logging.info(f"f_pth:{f_pth}, {new_cntr} new and {mod_cntr} modified records, dt:{dt}")
@@ -118,19 +124,19 @@ class SocketioServer:
     @staticmethod
     @socketio.on('connect')
     def handle_connect():
-        logging.info('Client connected')
+        logging.info(f'sessid:{request.sid} client connected')
 
     @staticmethod
     @socketio.on('disconnect')
     def handle_disconnect():
-        logging.info('Client disconnected')
+        logging.info(f'sessid:{request.sid} client disconnected')
 
     @staticmethod
     @socketio.on('start_file_upload')
     def handle_start_file_upload_ack(file_size, file_id):
 
         sessid = request.sid
-        logging.info(f'file_size:{file_size }, sessid:{sessid}, file_id:{file_id}')
+        logging.debug(f'file_size:{file_size }, sessid:{sessid}, file_id:{file_id}')
 
         with open(os.path.join(STORAGE_PATH, f"{sessid}.{file_id}"), 'w', encoding=CSV_ENCODING):
             socketio.emit('start_file_upload_ack', {'message': 'Chunk acknowledged by the server'})
@@ -186,7 +192,6 @@ def set_logging(log_level):
 @app.route('/')
 def index():
 
-    logging.info('Client connected')
     ctx = dict(
         csv_encoding=CSV_ENCODING,
         csv_delimiter=CSV_DELIMITER,
